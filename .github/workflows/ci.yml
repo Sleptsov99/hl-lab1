@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and verify in Docker
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/app" \
+            -w /app \
+            maven:3.9.9-eclipse-temurin-21 \
+            mvn -B verify
+
+      - name: Test Docker image build
+        run: docker build -t spamer:ci .

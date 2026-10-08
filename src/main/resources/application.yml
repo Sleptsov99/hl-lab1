@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spamer
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/spamer}
+    username: ${DATABASE_USER:spamer}
+    password: ${DATABASE_PASSWORD:spamer}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+spamer:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-production-use-long-random-string-here}
+    expiration-seconds: 86400
+  admin:
+    password: ${ADMIN_PASSWORD:admin}
+  victim:
+    base-url: ${VICTIM_BASE_URL:http://localhost:8080}
