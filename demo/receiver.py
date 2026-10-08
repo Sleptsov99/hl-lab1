@@ -21,11 +21,32 @@ _seq = 0
 
 
 class Handler(BaseHTTPRequestHandler):
+    # читаем тело и по Content-Length, и по chunked (Spring-клиент шлёт chunked)
+    def _read_body(self):
+        te = self.headers.get("Transfer-Encoding", "").lower()
+        if "chunked" in te:
+            parts = []
+            while True:
+                line = self.rfile.readline().strip()
+                if not line:
+                    continue
+                try:
+                    size = int(line.split(b";")[0], 16)
+                except ValueError:
+                    break
+                if size == 0:
+                    self.rfile.readline()  # финальный CRLF
+                    break
+                parts.append(self.rfile.read(size))
+                self.rfile.readline()  # CRLF после чанка
+            return b"".join(parts)
+        length = int(self.headers.get("Content-Length", 0))
+        return self.rfile.read(length) if length else b""
+
     # /spam/send шлёт POST на /inbox; принимаем любой путь, чтобы не спотыкаться
     def do_POST(self):
         global _seq
-        length = int(self.headers.get("Content-Length", 0))
-        raw = self.rfile.read(length) if length else b""
+        raw = self._read_body()
         try:
             body = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
