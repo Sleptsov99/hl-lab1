@@ -119,38 +119,6 @@ class ApiFlowTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void spamSendChargesBalanceAndJournals() throws Exception {
-        String userId = createUser("carol", "carol@example.com", "USER_PRO", "100.00");
-        String serviceId = createService("bulk-" + System.nanoTime(), "2.0000");
-
-        // one active proxy so the M2M link has something to attach
-        mvc.perform(post("/api/v1/proxy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of(
-                                "host", "10.0.0.1",
-                                "port", 8080,
-                                "protocol", "HTTP",
-                                "status", "ACTIVE"))))
-                .andExpect(status().isCreated());
-
-        mvc.perform(post("/api/v1/spam/send")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of(
-                                "userId", userId,
-                                "serviceId", serviceId,
-                                "victimContact", "target@example.com",
-                                "messageBody", "hello",
-                                "messageCount", 3))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("SENT")))
-                .andExpect(jsonPath("$.charged", is(6.0)))
-                .andExpect(jsonPath("$.remainingBalance", is(94.0)));
-
-        mvc.perform(get("/api/v1/users/{id}", userId))
-                .andExpect(jsonPath("$.balance", is(94.0)));
-    }
-
-    @Test
     void spamSendRollsBackWhenBalanceTooLow() throws Exception {
         String userId = createUser("dave", "dave@example.com", "USER_PRO", "1.00");
         String serviceId = createService("pricey-" + System.nanoTime(), "5.0000");

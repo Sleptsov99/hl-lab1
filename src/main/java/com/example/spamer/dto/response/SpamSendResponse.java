@@ -8,5 +8,8 @@ public record SpamSendResponse(
         UUID spamLogId,
         SpamStatus status,
         BigDecimal charged,
-        BigDecimal remainingBalance) {
+        BigDecimal remainingBalance,
+        int delivered,
+        String target,
+        int lastHttpStatus) {
 }
