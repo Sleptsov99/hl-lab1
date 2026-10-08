@@ -149,6 +149,32 @@ export SENDER_TARGET_URL=https://my-test-box.example/inbox
 Встроенный приёмник `POST /api/v1/test-receiver/inbox` просто логирует тело и
 отвечает `200 {"received": true, ...}` — чтобы демо работало из коробки.
 
+#### Демо на своём VPS
+
+На чистом VPS подними приёмник (без зависимостей, только stdlib):
+
+```bash
+# на VPS:
+PORT=9000 python3 demo/receiver.py        # слушает 0.0.0.0:9000, POST /inbox
+```
+
+Запусти приложение, указав на него:
+
+```bash
+export SENDER_TARGET_URL=http://<IP-твоего-VPS>:9000/inbox
+docker compose up --build
+```
+
+Прогон одной командой (создаёт данные и шлёт 3 сообщения):
+
+```bash
+BASE=http://localhost:8080 ./demo/demo.sh
+```
+
+В ответе `/spam/send` увидишь `delivered/target/lastHttpStatus`, а в логе
+`receiver.py` на VPS — три входящих сообщения. `SENDER_TARGET_URL` нигде не
+коммитится; IP задаёшь только в своём окружении.
+
 ### `POST /api/v1/subscriptions`
 
 Шаги (одна транзакция): найти пользователя и сервис → проверить отсутствие
