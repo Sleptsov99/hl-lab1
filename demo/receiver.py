@@ -48,6 +48,14 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"receiver is up\n")
 
+    # Публичный порт постоянно сканируют боты - они обрывают соединение на
+    # полуслове. Глушим обрывы/мусор, чтобы в логе были только реальные сообщения.
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, BrokenPipeError, TimeoutError):
+            self.close_connection = True
+
     def log_message(self, *args):
         pass  # свой лог выше, дефолтный шум не нужен
 
