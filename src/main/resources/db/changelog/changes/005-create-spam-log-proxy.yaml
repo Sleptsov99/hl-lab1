@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-spam-log-proxy
+      author: lab
+      changes:
+        - createTable:
+            tableName: spam_log_proxy
+            columns:
+              - column:
+                  name: spam_log_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: proxy_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            constraintName: pk_spam_log_proxy
+            tableName: spam_log_proxy
+            columnNames: spam_log_id, proxy_id
+        - addForeignKeyConstraint:
+            constraintName: fk_slp_spam_log
+            baseTableName: spam_log_proxy
+            baseColumnNames: spam_log_id
+            referencedTableName: spam_log
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_slp_proxy
+            baseTableName: spam_log_proxy
+            baseColumnNames: proxy_id
+            referencedTableName: proxy
+            referencedColumnNames: id
+            onDelete: CASCADE

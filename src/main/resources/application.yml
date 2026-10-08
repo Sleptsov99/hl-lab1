@@ -3,29 +3,27 @@ server:
 
 spring:
   application:
-    name: spamer
+    name: spamer-monolith
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/spamer}
-    username: ${DATABASE_USER:spamer}
-    password: ${DATABASE_PASSWORD:spamer}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/spamer}
+    username: ${DB_USERNAME:spamer}
+    password: ${DB_PASSWORD:spamer}
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
-  flyway:
+    properties:
+      hibernate.format_sql: true
+  liquibase:
     enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
 
 management:
   endpoints:
     web:
       exposure:
         include: health
-
-spamer:
-  jwt:
-    secret: ${JWT_SECRET:change-me-in-production-use-long-random-string-here}
-    expiration-seconds: 86400
-  admin:
-    password: ${ADMIN_PASSWORD:admin}
-  victim:
-    base-url: ${VICTIM_BASE_URL:http://localhost:8080}

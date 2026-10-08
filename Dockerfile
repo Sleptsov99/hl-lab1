@@ -1,16 +1,15 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+# --- build stage ---
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+# cache deps separately from source
 COPY pom.xml .
-COPY checkstyle.xml .
-RUN mvn -B dependency:go-offline
+RUN mvn -q -B dependency:go-offline
 COPY src ./src
-RUN mvn -B verify -DskipTests=false
+RUN mvn -q -B clean package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+# --- run stage ---
+FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN apk add --no-cache wget \
-    && addgroup -S spamer && adduser -S spamer -G spamer
-USER spamer
-COPY --from=build /app/target/spamer-*.jar app.jar
+COPY --from=build /app/target/spamer-monolith-*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

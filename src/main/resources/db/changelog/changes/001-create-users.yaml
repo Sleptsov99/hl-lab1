@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-users
+      author: lab
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: email
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: role
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: balance
+                  type: numeric(19, 2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+        - sql:
+            sql: ALTER TABLE users ADD CONSTRAINT chk_users_balance_nonneg CHECK (balance >= 0)
+        - sql:
+            sql: >-
+              ALTER TABLE users ADD CONSTRAINT chk_users_role
+              CHECK (role IN ('ADMIN', 'USER_FREE', 'USER_PRO', 'VICTIM', 'BUY_OPERATOR'))
