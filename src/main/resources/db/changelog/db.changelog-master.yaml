@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/001-create-users.yaml
+  - include:
+      file: db/changelog/changes/002-create-services.yaml
+  - include:
+      file: db/changelog/changes/003-create-proxy.yaml
+  - include:
+      file: db/changelog/changes/004-create-spam-log.yaml
+  - include:
+      file: db/changelog/changes/005-create-spam-log-proxy.yaml
+  - include:
+      file: db/changelog/changes/006-create-user-service-subscriptions.yaml

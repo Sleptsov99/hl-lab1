@@ -2,9 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [develop, master]
+    branches: [develop, main, master]
   pull_request:
-    branches: [develop, master]
 
 jobs:
   build-and-test:
@@ -12,13 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and verify in Docker
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/app" \
-            -w /app \
-            maven:3.9.9-eclipse-temurin-21 \
-            mvn -B verify
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
 
-      - name: Test Docker image build
-        run: docker build -t spamer:ci .
+      # Run on the runner directly (not inside a container) so Testcontainers
+      # can reach the host Docker daemon. verify enforces the JaCoCo 70% gate.
+      - name: Build, test and coverage gate
+        run: mvn -B verify
+
+      - name: Build Docker image
+        run: docker build -t spamer-monolith:ci .

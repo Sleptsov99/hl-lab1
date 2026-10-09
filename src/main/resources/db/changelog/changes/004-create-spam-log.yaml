@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-spam-log
+      author: lab
+      changes:
+        - createTable:
+            tableName: spam_log
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: victim_contact
+                  type: varchar(256)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message_body
+                  type: text
+              - column:
+                  name: status
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sent_at
+                  type: timestamp
+        - addForeignKeyConstraint:
+            constraintName: fk_spam_log_user
+            baseTableName: spam_log
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_spam_log_user
+            tableName: spam_log
+            columns:
+              - column:
+                  name: user_id
+        - sql:
+            sql: >-
+              ALTER TABLE spam_log ADD CONSTRAINT chk_spam_log_status
+              CHECK (status IN ('QUEUED', 'SENT', 'FAILED', 'BLOCKED'))

@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-user-service-subscriptions
+      author: lab
+      changes:
+        - createTable:
+            tableName: user_service_subscriptions
+            columns:
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subscribed_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: discount_percent
+                  type: numeric(5, 2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            constraintName: pk_user_service_subscriptions
+            tableName: user_service_subscriptions
+            columnNames: user_id, service_id
+        - addForeignKeyConstraint:
+            constraintName: fk_uss_user
+            baseTableName: user_service_subscriptions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_uss_service
+            baseTableName: user_service_subscriptions
+            baseColumnNames: service_id
+            referencedTableName: services
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - sql:
+            sql: >-
+              ALTER TABLE user_service_subscriptions
+              ADD CONSTRAINT chk_uss_discount CHECK (discount_percent BETWEEN 0 AND 100)
