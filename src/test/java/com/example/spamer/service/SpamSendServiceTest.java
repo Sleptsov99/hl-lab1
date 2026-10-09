@@ -14,16 +14,12 @@ import com.example.spamer.domain.entity.ServiceEntity;
 import com.example.spamer.domain.entity.SpamLogEntity;
 import com.example.spamer.domain.entity.SpamStatus;
 import com.example.spamer.domain.entity.UserEntity;
-import com.example.spamer.domain.repository.ServiceRepository;
-import com.example.spamer.domain.repository.SpamLogRepository;
-import com.example.spamer.domain.repository.UserRepository;
 import com.example.spamer.dto.request.SpamSendRequest;
 import com.example.spamer.dto.response.SpamSendResponse;
 import com.example.spamer.exception.BusinessException;
 import com.example.spamer.exception.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,9 +30,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SpamSendServiceTest {
 
-    @Mock UserRepository userRepo;
-    @Mock ServiceRepository serviceRepo;
-    @Mock SpamLogRepository logRepo;
+    @Mock UserService users;
+    @Mock ServiceCatalogService services;
+    @Mock SpamLogService logs;
     @Mock ProxyProviderService proxyProvider;
     @Mock MessageSender sender;
 
@@ -47,7 +43,7 @@ class SpamSendServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SpamSendService(userRepo, serviceRepo, logRepo, proxyProvider, sender);
+        service = new SpamSendService(users, services, logs, proxyProvider, sender);
     }
 
     private UserEntity user(String balance) {
@@ -57,7 +53,7 @@ class SpamSendServiceTest {
         return u;
     }
 
-    private ServiceEntity service(String price, boolean active) {
+    private ServiceEntity catalogItem(String price, boolean active) {
         ServiceEntity s = new ServiceEntity();
         s.setId(serviceId);
         s.setName("svc");
@@ -68,8 +64,8 @@ class SpamSendServiceTest {
 
     @Test
     void chargesAndMarksSent() {
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user("100.00")));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(service("2.00", true)));
+        when(users.find(userId)).thenReturn(user("100.00"));
+        when(services.find(serviceId)).thenReturn(catalogItem("2.00", true));
         ProxyEntity proxy = new ProxyEntity();
         proxy.setId(UUID.randomUUID());
         when(proxyProvider.pick(2)).thenReturn(List.of(proxy));
@@ -84,13 +80,13 @@ class SpamSendServiceTest {
         assertThat(res.remainingBalance()).isEqualByComparingTo("96.00");
         assertThat(res.delivered()).isEqualTo(2);
         verify(sender, times(2)).send(any(), any(), anyInt());
-        verify(logRepo).save(any(SpamLogEntity.class));
+        verify(logs).save(any(SpamLogEntity.class));
     }
 
     @Test
     void rollsBackWhenReceiverRejects() {
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user("100.00")));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(service("2.00", true)));
+        when(users.find(userId)).thenReturn(user("100.00"));
+        when(services.find(serviceId)).thenReturn(catalogItem("2.00", true));
         when(proxyProvider.pick(1)).thenReturn(List.of());
         when(sender.send(any(), any(), anyInt()))
                 .thenReturn(new MessageSender.SendResult(503, false, "down", 1));
@@ -99,25 +95,25 @@ class SpamSendServiceTest {
                 new SpamSendRequest(userId, serviceId, "t@example.com", null, 1)))
                 .isInstanceOf(BusinessException.class);
 
-        verify(logRepo, never()).save(any());
+        verify(logs, never()).save(any());
     }
 
     @Test
     void rejectsWhenBalanceTooLow() {
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user("1.00")));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(service("5.00", true)));
+        when(users.find(userId)).thenReturn(user("1.00"));
+        when(services.find(serviceId)).thenReturn(catalogItem("5.00", true));
 
         assertThatThrownBy(() -> service.send(
                 new SpamSendRequest(userId, serviceId, "t@example.com", null, 1)))
                 .isInstanceOf(BusinessException.class);
 
-        verify(logRepo, never()).save(any());
+        verify(logs, never()).save(any());
     }
 
     @Test
     void rejectsInactiveService() {
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user("100.00")));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(service("1.00", false)));
+        when(users.find(userId)).thenReturn(user("100.00"));
+        when(services.find(serviceId)).thenReturn(catalogItem("1.00", false));
 
         assertThatThrownBy(() -> service.send(
                 new SpamSendRequest(userId, serviceId, "t@example.com", null, 1)))
@@ -126,7 +122,7 @@ class SpamSendServiceTest {
 
     @Test
     void missingUserGives404() {
-        when(userRepo.findById(userId)).thenReturn(Optional.empty());
+        when(users.find(userId)).thenThrow(NotFoundException.of("User", userId));
 
         assertThatThrownBy(() -> service.send(
                 new SpamSendRequest(userId, serviceId, "t@example.com", null, 1)))

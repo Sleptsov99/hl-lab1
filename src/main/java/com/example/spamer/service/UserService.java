@@ -11,20 +11,17 @@ import com.example.spamer.mapper.UserMapper;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository repo;
     private final UserMapper mapper;
-
-    public UserService(UserRepository repo, UserMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
 
     @Transactional
     public UserResponse create(CreateUserRequest req) {
@@ -107,8 +104,7 @@ public class UserService {
         repo.deleteById(id);
     }
 
-    // shared lookup; keeps the "not found -> 404" in one place
-    UserEntity find(UUID id) {
+    public UserEntity find(UUID id) {
         return repo.findById(id).orElseThrow(() -> NotFoundException.of("User", id));
     }
 }

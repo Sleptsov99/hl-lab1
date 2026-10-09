@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Min;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,13 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/spam-log")
 @Validated
+@RequiredArgsConstructor
 public class SpamLogController {
 
     private final SpamLogService service;
-
-    public SpamLogController(SpamLogService service) {
-        this.service = service;
-    }
 
     @PostMapping
     public ResponseEntity<SpamLogResponse> create(@Valid @RequestBody CreateSpamLogRequest req) {
@@ -42,8 +40,8 @@ public class SpamLogController {
     }
 
     @GetMapping("/{id}")
-    public SpamLogResponse get(@PathVariable UUID id) {
-        return service.get(id);
+    public ResponseEntity<SpamLogResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
     }
 
     @GetMapping
@@ -57,22 +55,22 @@ public class SpamLogController {
 
     // Cursor feed for infinite scroll - no total count exposed by design.
     @GetMapping("/feed")
-    public CursorPage<SpamLogResponse> feed(
+    public ResponseEntity<CursorPage<SpamLogResponse>> feed(
             @RequestParam(required = false) UUID cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(50) int size) {
-        return service.feed(cursor, size);
+        return ResponseEntity.ok(service.feed(cursor, size));
     }
 
     @PutMapping("/{id}")
-    public SpamLogResponse replace(
+    public ResponseEntity<SpamLogResponse> replace(
             @PathVariable UUID id, @Valid @RequestBody CreateSpamLogRequest req) {
-        return service.replace(id, req);
+        return ResponseEntity.ok(service.replace(id, req));
     }
 
     @PatchMapping("/{id}")
-    public SpamLogResponse patch(
+    public ResponseEntity<SpamLogResponse> patch(
             @PathVariable UUID id, @Valid @RequestBody PatchSpamLogRequest req) {
-        return service.patch(id, req);
+        return ResponseEntity.ok(service.patch(id, req));
     }
 
     @DeleteMapping("/{id}")

@@ -5,17 +5,14 @@ import com.example.spamer.domain.entity.ServiceEntity;
 import com.example.spamer.domain.entity.SpamLogEntity;
 import com.example.spamer.domain.entity.SpamStatus;
 import com.example.spamer.domain.entity.UserEntity;
-import com.example.spamer.domain.repository.ServiceRepository;
-import com.example.spamer.domain.repository.SpamLogRepository;
-import com.example.spamer.domain.repository.UserRepository;
 import com.example.spamer.dto.request.SpamSendRequest;
 import com.example.spamer.dto.response.SpamSendResponse;
 import com.example.spamer.exception.BusinessException;
-import com.example.spamer.exception.NotFoundException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,36 +34,22 @@ import org.springframework.transaction.annotation.Transactional;
  * in production you'd move the I/O out of the transaction and reconcile.
  */
 @Service
+@RequiredArgsConstructor
 public class SpamSendService {
 
-    private final UserRepository userRepo;
-    private final ServiceRepository serviceRepo;
-    private final SpamLogRepository logRepo;
+    private final UserService users;
+    private final ServiceCatalogService services;
+    private final SpamLogService logs;
     private final ProxyProviderService proxyProvider;
     private final MessageSender sender;
 
     @Value("${spamer.sender.target-url}")
     private String target;
 
-    public SpamSendService(
-            UserRepository userRepo,
-            ServiceRepository serviceRepo,
-            SpamLogRepository logRepo,
-            ProxyProviderService proxyProvider,
-            MessageSender sender) {
-        this.userRepo = userRepo;
-        this.serviceRepo = serviceRepo;
-        this.logRepo = logRepo;
-        this.proxyProvider = proxyProvider;
-        this.sender = sender;
-    }
-
     @Transactional
     public SpamSendResponse send(SpamSendRequest req) {
-        UserEntity user = userRepo.findById(req.userId())
-                .orElseThrow(() -> NotFoundException.of("User", req.userId()));
-        ServiceEntity service = serviceRepo.findById(req.serviceId())
-                .orElseThrow(() -> NotFoundException.of("Service", req.serviceId()));
+        UserEntity user = users.find(req.userId());
+        ServiceEntity service = services.find(req.serviceId());
 
         if (!service.isActive()) {
             throw new BusinessException("Service is not active: " + service.getName());
@@ -91,7 +74,6 @@ public class SpamSendService {
         List<ProxyEntity> proxies = proxyProvider.pick(req.messageCount());
         log.setProxies(new HashSet<>(proxies));
 
-        // real HTTP egress to the configured receiver
         int delivered = 0;
         int lastStatus = 0;
         for (int i = 1; i <= req.messageCount(); i++) {
@@ -99,7 +81,6 @@ public class SpamSendService {
                     sender.send(req.victimContact(), req.messageBody(), i);
             lastStatus = result.httpStatus();
             if (!result.ok()) {
-                // rolls back the debit and the (unflushed) log row
                 throw new BusinessException("Receiver rejected message " + i
                         + ": HTTP " + result.httpStatus()
                         + (result.responseSnippet() != null
@@ -110,7 +91,7 @@ public class SpamSendService {
 
         log.setStatus(SpamStatus.SENT);
         log.setSentAt(Instant.now());
-        logRepo.save(log);
+        logs.save(log);
 
         return new SpamSendResponse(
                 log.getId(), log.getStatus(), cost, user.getBalance(),

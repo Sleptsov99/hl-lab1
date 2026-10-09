@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,13 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/proxy")
 @Validated
+@RequiredArgsConstructor
 public class ProxyController {
 
     private final ProxyService service;
-
-    public ProxyController(ProxyService service) {
-        this.service = service;
-    }
 
     @PostMapping
     public ResponseEntity<ProxyResponse> create(@Valid @RequestBody CreateProxyRequest req) {
@@ -41,8 +39,8 @@ public class ProxyController {
     }
 
     @GetMapping("/{id}")
-    public ProxyResponse get(@PathVariable UUID id) {
-        return service.get(id);
+    public ResponseEntity<ProxyResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
     }
 
     @GetMapping
@@ -55,13 +53,15 @@ public class ProxyController {
     }
 
     @PutMapping("/{id}")
-    public ProxyResponse replace(@PathVariable UUID id, @Valid @RequestBody CreateProxyRequest req) {
-        return service.replace(id, req);
+    public ResponseEntity<ProxyResponse> replace(
+            @PathVariable UUID id, @Valid @RequestBody CreateProxyRequest req) {
+        return ResponseEntity.ok(service.replace(id, req));
     }
 
     @PatchMapping("/{id}")
-    public ProxyResponse patch(@PathVariable UUID id, @Valid @RequestBody PatchProxyRequest req) {
-        return service.patch(id, req);
+    public ResponseEntity<ProxyResponse> patch(
+            @PathVariable UUID id, @Valid @RequestBody PatchProxyRequest req) {
+        return ResponseEntity.ok(service.patch(id, req));
     }
 
     @DeleteMapping("/{id}")

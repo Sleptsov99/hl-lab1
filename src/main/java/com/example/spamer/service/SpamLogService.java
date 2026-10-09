@@ -1,9 +1,7 @@
 package com.example.spamer.service;
 
 import com.example.spamer.domain.entity.SpamLogEntity;
-import com.example.spamer.domain.entity.UserEntity;
 import com.example.spamer.domain.repository.SpamLogRepository;
-import com.example.spamer.domain.repository.UserRepository;
 import com.example.spamer.dto.request.CreateSpamLogRequest;
 import com.example.spamer.dto.request.PatchSpamLogRequest;
 import com.example.spamer.dto.response.CursorPage;
@@ -12,28 +10,24 @@ import com.example.spamer.exception.NotFoundException;
 import com.example.spamer.mapper.SpamLogMapper;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class SpamLogService {
 
     private final SpamLogRepository repo;
-    private final UserRepository userRepo;
+    private final UserService users;
     private final SpamLogMapper mapper;
-
-    public SpamLogService(SpamLogRepository repo, UserRepository userRepo, SpamLogMapper mapper) {
-        this.repo = repo;
-        this.userRepo = userRepo;
-        this.mapper = mapper;
-    }
 
     @Transactional
     public SpamLogResponse create(CreateSpamLogRequest req) {
         SpamLogEntity log = new SpamLogEntity();
-        log.setUser(requireUser(req.userId()));
+        log.setUser(users.find(req.userId()));
         log.setVictimContact(req.victimContact());
         log.setMessageBody(req.messageBody());
         log.setStatus(req.status());
@@ -62,8 +56,8 @@ public class SpamLogService {
     @Transactional(readOnly = true)
     public CursorPage<SpamLogResponse> feed(UUID cursor, int size) {
         List<SpamLogEntity> rows = cursor == null
-                ? repo.findFirstPage(Limit.of(size + 1))
-                : repo.findAfterCursor(cursor, Limit.of(size + 1));
+                ? repo.findAllByOrderByIdAsc(Limit.of(size + 1))
+                : repo.findByIdGreaterThanOrderByIdAsc(cursor, Limit.of(size + 1));
 
         String next = null;
         if (rows.size() > size) {
@@ -78,7 +72,7 @@ public class SpamLogService {
     @Transactional
     public SpamLogResponse replace(UUID id, CreateSpamLogRequest req) {
         SpamLogEntity log = find(id);
-        log.setUser(requireUser(req.userId()));
+        log.setUser(users.find(req.userId()));
         log.setVictimContact(req.victimContact());
         log.setMessageBody(req.messageBody());
         log.setStatus(req.status());
@@ -108,11 +102,12 @@ public class SpamLogService {
         repo.deleteById(id);
     }
 
-    SpamLogEntity find(UUID id) {
-        return repo.findById(id).orElseThrow(() -> NotFoundException.of("SpamLog", id));
+    @Transactional
+    public SpamLogEntity save(SpamLogEntity log) {
+        return repo.save(log);
     }
 
-    private UserEntity requireUser(UUID userId) {
-        return userRepo.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
+    SpamLogEntity find(UUID id) {
+        return repo.findById(id).orElseThrow(() -> NotFoundException.of("SpamLog", id));
     }
 }

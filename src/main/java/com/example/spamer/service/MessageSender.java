@@ -1,6 +1,7 @@
 package com.example.spamer.service;
 
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -17,17 +18,13 @@ import org.springframework.web.client.RestClientResponseException;
  * (the built-in test endpoint, or your own test server via SENDER_TARGET_URL).
  */
 @Service
+@RequiredArgsConstructor
 public class MessageSender {
 
     private static final Logger log = LoggerFactory.getLogger(MessageSender.class);
 
     private final RestClient client;
     private final Environment env;
-
-    public MessageSender(RestClient senderRestClient, Environment env) {
-        this.client = senderRestClient;
-        this.env = env;
-    }
 
     public SendResult send(String contact, String body, int index) {
         // read lazily so the target can be re-pointed via config without a rebuild

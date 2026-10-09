@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,13 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/services")
 @Validated
+@RequiredArgsConstructor
 public class ServiceController {
 
     private final ServiceCatalogService service;
-
-    public ServiceController(ServiceCatalogService service) {
-        this.service = service;
-    }
 
     @PostMapping
     public ResponseEntity<ServiceResponse> create(@Valid @RequestBody CreateServiceRequest req) {
@@ -41,8 +39,8 @@ public class ServiceController {
     }
 
     @GetMapping("/{id}")
-    public ServiceResponse get(@PathVariable UUID id) {
-        return service.get(id);
+    public ResponseEntity<ServiceResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
     }
 
     @GetMapping
@@ -55,15 +53,15 @@ public class ServiceController {
     }
 
     @PutMapping("/{id}")
-    public ServiceResponse replace(
+    public ResponseEntity<ServiceResponse> replace(
             @PathVariable UUID id, @Valid @RequestBody CreateServiceRequest req) {
-        return service.replace(id, req);
+        return ResponseEntity.ok(service.replace(id, req));
     }
 
     @PatchMapping("/{id}")
-    public ServiceResponse patch(
+    public ResponseEntity<ServiceResponse> patch(
             @PathVariable UUID id, @Valid @RequestBody PatchServiceRequest req) {
-        return service.patch(id, req);
+        return ResponseEntity.ok(service.patch(id, req));
     }
 
     @DeleteMapping("/{id}")

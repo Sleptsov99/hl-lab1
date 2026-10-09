@@ -10,20 +10,17 @@ import com.example.spamer.exception.NotFoundException;
 import com.example.spamer.mapper.ServiceMapper;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class ServiceCatalogService {
 
     private final ServiceRepository repo;
     private final ServiceMapper mapper;
-
-    public ServiceCatalogService(ServiceRepository repo, ServiceMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
 
     @Transactional
     public ServiceResponse create(CreateServiceRequest req) {
@@ -91,7 +88,7 @@ public class ServiceCatalogService {
         repo.deleteById(id);
     }
 
-    ServiceEntity find(UUID id) {
+    public ServiceEntity find(UUID id) {
         return repo.findById(id).orElseThrow(() -> NotFoundException.of("Service", id));
     }
 

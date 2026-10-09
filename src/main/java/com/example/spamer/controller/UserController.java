@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,13 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/users")
 @Validated
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService service;
-
-    public UserController(UserService service) {
-        this.service = service;
-    }
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest req) {
@@ -41,8 +39,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserResponse get(@PathVariable UUID id) {
-        return service.get(id);
+    public ResponseEntity<UserResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.get(id));
     }
 
     @GetMapping
@@ -56,13 +54,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public UserResponse replace(@PathVariable UUID id, @Valid @RequestBody CreateUserRequest req) {
-        return service.replace(id, req);
+    public ResponseEntity<UserResponse> replace(
+            @PathVariable UUID id, @Valid @RequestBody CreateUserRequest req) {
+        return ResponseEntity.ok(service.replace(id, req));
     }
 
     @PatchMapping("/{id}")
-    public UserResponse patch(@PathVariable UUID id, @Valid @RequestBody PatchUserRequest req) {
-        return service.patch(id, req);
+    public ResponseEntity<UserResponse> patch(
+            @PathVariable UUID id, @Valid @RequestBody PatchUserRequest req) {
+        return ResponseEntity.ok(service.patch(id, req));
     }
 
     @DeleteMapping("/{id}")

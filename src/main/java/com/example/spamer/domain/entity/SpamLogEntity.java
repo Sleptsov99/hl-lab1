@@ -16,7 +16,11 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "spam_log")
 public class SpamLogEntity {
@@ -25,22 +29,21 @@ public class SpamLogEntity {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(name = "victim_contact", nullable = false, length = 256)
+    @Column(nullable = false, length = 256)
     private String victimContact;
 
-    @Column(name = "message_body", columnDefinition = "text")
+    @Column(columnDefinition = "text")
     private String messageBody;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private SpamStatus status;
 
-    @Column(name = "sent_at")
     private Instant sentAt;
 
+    // Implicit names would be spam_log_proxies and proxies_id.
     @ManyToMany
     @JoinTable(
             name = "spam_log_proxy",
@@ -53,61 +56,5 @@ public class SpamLogEntity {
         if (id == null) {
             id = UUID.randomUUID();
         }
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getVictimContact() {
-        return victimContact;
-    }
-
-    public void setVictimContact(String victimContact) {
-        this.victimContact = victimContact;
-    }
-
-    public String getMessageBody() {
-        return messageBody;
-    }
-
-    public void setMessageBody(String messageBody) {
-        this.messageBody = messageBody;
-    }
-
-    public SpamStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(SpamStatus status) {
-        this.status = status;
-    }
-
-    public Instant getSentAt() {
-        return sentAt;
-    }
-
-    public void setSentAt(Instant sentAt) {
-        this.sentAt = sentAt;
-    }
-
-    public Set<ProxyEntity> getProxies() {
-        return proxies;
-    }
-
-    public void setProxies(Set<ProxyEntity> proxies) {
-        this.proxies = proxies;
     }
 }

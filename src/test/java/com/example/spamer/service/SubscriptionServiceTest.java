@@ -3,25 +3,22 @@ package com.example.spamer.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.spamer.domain.entity.ServiceEntity;
 import com.example.spamer.domain.entity.SubscriptionEntity;
+import com.example.spamer.domain.entity.SubscriptionId;
 import com.example.spamer.domain.entity.UserEntity;
 import com.example.spamer.domain.entity.UserRole;
-import com.example.spamer.domain.repository.ServiceRepository;
 import com.example.spamer.domain.repository.SubscriptionRepository;
-import com.example.spamer.domain.repository.UserRepository;
 import com.example.spamer.dto.request.SubscriptionRequest;
 import com.example.spamer.dto.response.SubscriptionResponse;
 import com.example.spamer.exception.ConflictException;
 import com.example.spamer.mapper.SubscriptionMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,8 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
-    @Mock UserRepository userRepo;
-    @Mock ServiceRepository serviceRepo;
+    @Mock UserService users;
+    @Mock ServiceCatalogService services;
     @Mock SubscriptionRepository subRepo;
     @Mock SubscriptionMapper mapper;
 
@@ -44,7 +41,7 @@ class SubscriptionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SubscriptionService(userRepo, serviceRepo, subRepo, mapper);
+        service = new SubscriptionService(users, services, subRepo, mapper);
     }
 
     private void stubMapper() {
@@ -69,9 +66,9 @@ class SubscriptionServiceTest {
     @Test
     void freeUserBecomesPro() {
         UserEntity u = user(UserRole.USER_FREE);
-        when(userRepo.findById(userId)).thenReturn(Optional.of(u));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(svc()));
-        when(subRepo.existsForUserAndService(userId, serviceId)).thenReturn(false);
+        when(users.find(userId)).thenReturn(u);
+        when(services.find(serviceId)).thenReturn(svc());
+        when(subRepo.existsById(new SubscriptionId(userId, serviceId))).thenReturn(false);
         stubMapper();
 
         service.subscribe(new SubscriptionRequest(userId, serviceId, new BigDecimal("10.00")));
@@ -83,9 +80,9 @@ class SubscriptionServiceTest {
     @Test
     void adminKeepsRole() {
         UserEntity u = user(UserRole.ADMIN);
-        when(userRepo.findById(userId)).thenReturn(Optional.of(u));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(svc()));
-        when(subRepo.existsForUserAndService(userId, serviceId)).thenReturn(false);
+        when(users.find(userId)).thenReturn(u);
+        when(services.find(serviceId)).thenReturn(svc());
+        when(subRepo.existsById(new SubscriptionId(userId, serviceId))).thenReturn(false);
         stubMapper();
 
         service.subscribe(new SubscriptionRequest(userId, serviceId, null));
@@ -95,9 +92,9 @@ class SubscriptionServiceTest {
 
     @Test
     void duplicateRejected() {
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user(UserRole.USER_FREE)));
-        when(serviceRepo.findById(serviceId)).thenReturn(Optional.of(svc()));
-        when(subRepo.existsForUserAndService(userId, serviceId)).thenReturn(true);
+        when(users.find(userId)).thenReturn(user(UserRole.USER_FREE));
+        when(services.find(serviceId)).thenReturn(svc());
+        when(subRepo.existsById(new SubscriptionId(userId, serviceId))).thenReturn(true);
 
         assertThatThrownBy(() -> service.subscribe(
                 new SubscriptionRequest(userId, serviceId, null)))

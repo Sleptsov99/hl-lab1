@@ -5,16 +5,14 @@ import com.example.spamer.domain.entity.SubscriptionEntity;
 import com.example.spamer.domain.entity.SubscriptionId;
 import com.example.spamer.domain.entity.UserEntity;
 import com.example.spamer.domain.entity.UserRole;
-import com.example.spamer.domain.repository.ServiceRepository;
 import com.example.spamer.domain.repository.SubscriptionRepository;
-import com.example.spamer.domain.repository.UserRepository;
 import com.example.spamer.dto.request.SubscriptionRequest;
 import com.example.spamer.dto.response.SubscriptionResponse;
 import com.example.spamer.exception.ConflictException;
-import com.example.spamer.exception.NotFoundException;
 import com.example.spamer.mapper.SubscriptionMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,37 +22,26 @@ import org.springframework.transaction.annotation.Transactional;
  * subscription" or "subscription but still free". Both happen in one transaction.
  */
 @Service
+@RequiredArgsConstructor
 public class SubscriptionService {
 
-    private final UserRepository userRepo;
-    private final ServiceRepository serviceRepo;
+    private final UserService users;
+    private final ServiceCatalogService services;
     private final SubscriptionRepository subRepo;
     private final SubscriptionMapper mapper;
 
-    public SubscriptionService(
-            UserRepository userRepo,
-            ServiceRepository serviceRepo,
-            SubscriptionRepository subRepo,
-            SubscriptionMapper mapper) {
-        this.userRepo = userRepo;
-        this.serviceRepo = serviceRepo;
-        this.subRepo = subRepo;
-        this.mapper = mapper;
-    }
-
     @Transactional
     public SubscriptionResponse subscribe(SubscriptionRequest req) {
-        UserEntity user = userRepo.findById(req.userId())
-                .orElseThrow(() -> NotFoundException.of("User", req.userId()));
-        ServiceEntity service = serviceRepo.findById(req.serviceId())
-                .orElseThrow(() -> NotFoundException.of("Service", req.serviceId()));
+        UserEntity user = users.find(req.userId());
+        ServiceEntity service = services.find(req.serviceId());
 
-        if (subRepo.existsForUserAndService(user.getId(), service.getId())) {
+        SubscriptionId id = new SubscriptionId(user.getId(), service.getId());
+        if (subRepo.existsById(id)) {
             throw new ConflictException("Already subscribed to service: " + service.getName());
         }
 
         SubscriptionEntity sub = new SubscriptionEntity();
-        sub.setId(new SubscriptionId(user.getId(), service.getId()));
+        sub.setId(id);
         sub.setUser(user);
         sub.setService(service);
         // Set explicitly: with an assigned composite id save() goes through merge,
